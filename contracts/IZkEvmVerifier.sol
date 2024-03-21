@@ -2,13 +2,11 @@
 
 pragma solidity ^0.8.16;
 
-interface IRollupVerifier {
+interface IZkEvmVerifier {
     /// @notice Verify aggregate zk proof.
-    /// @param batchIndex The batch index to verify.
     /// @param aggrProof The aggregated proof.
     /// @param publicInputHash The public input hash.
-    function verifyAggregateProof(
-        uint256 batchIndex,
+    function verify(
         bytes calldata aggrProof,
         bytes32 publicInputHash
     ) external view;

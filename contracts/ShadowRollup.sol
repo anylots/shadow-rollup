@@ -1,15 +1,24 @@
 // contracts/GLDToken.sol
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.16;
+pragma solidity =0.8.24;
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {Rollup} from "./Rollup.sol";
-import {IRollupVerifier} from "./IRollupVerifier.sol";
+import {IRollup} from "./IRollup.sol";
+import {IZkEvmVerifier} from "./libs/IZkEvmVerifier.sol";
 
 /// @title Rollup
 /// @notice This contract maintains data for rollup.
 contract ShadowRollup is Ownable {
     address public rollup;
-    address public verifier;
+    address public zkevm_verifier;
+
+    struct BatchStore {
+        bytes32 prevStateRoot;
+        bytes32 postStateRoot;
+        bytes32 withdrawalRoot;
+        bytes32 dataHash;
+        bytes32 blobVersionedHash;
+    }
+    mapping(uint256 => BatchStore) public committedBatchStores;
 
     /**
      * @notice Store Challenge Information.(batchIndex => BatchChallenge)
@@ -35,7 +44,14 @@ contract ShadowRollup is Ownable {
 
     constructor(address _rollup, address _verifier) {
         rollup = _rollup;
-        verifier = _verifier;
+        zkevm_verifier = _verifier;
+    }
+
+    function commitBatch(
+        uint64 _batchIndex,
+        BatchStore calldata _batchData
+    ) external {
+        committedBatchStores[_batchIndex] = _batchData;
     }
 
     // challengeState challenges a batch by submitting a deposit.
@@ -50,45 +66,63 @@ contract ShadowRollup is Ownable {
         emit ChallengeState(batchIndex, _msgSender(), msg.value);
     }
 
-    // proveState proves a batch by submitting a proof.
     function proveState(
         uint64 _batchIndex,
-        bytes calldata _aggrProof
+        bytes calldata _aggrProof,
+        bytes calldata _kzgData
     ) external {
-        // check proof
-        require(_aggrProof.length > 0, "invalid proof");
+        require(_aggrProof.length > 0, "Invalid proof");
+        require(_kzgData.length == 128, "Invalid KZG data");
 
-        (
-            ,
-            ,
-            bytes32 prevStateRoot,
-            bytes32 postStateRoot,
-            bytes32 withdrawalRoot,
-            bytes32 dataHash,
-            ,
-            ,
-            ,
-            ,
+        uint64 layer2ChainId = IRollup(rollup).layer2ChainId();
 
-        ) = Rollup(rollup).committedBatchStores(_batchIndex);
-
-        // compute public input hash
+        // Compute public input hash
         bytes32 _publicInputHash = keccak256(
             abi.encodePacked(
-                uint64(2710),
-                prevStateRoot,
-                postStateRoot,
-                withdrawalRoot,
-                dataHash
+                layer2ChainId,
+                committedBatchStores[_batchIndex].prevStateRoot,
+                committedBatchStores[_batchIndex].postStateRoot,
+                committedBatchStores[_batchIndex].withdrawalRoot,
+                committedBatchStores[_batchIndex].dataHash
             )
         );
 
-        // verify batch
-        IRollupVerifier(verifier).verifyAggregateProof(
-            _batchIndex,
-            _aggrProof,
-            _publicInputHash
+        // Extract commitment
+        bytes memory _commitment = _kzgData[32:80];
+
+        // Compute xBytes
+        bytes memory _xBytes = abi.encode(
+            keccak256(
+                abi.encodePacked(
+                    _commitment,
+                    committedBatchStores[_batchIndex].dataHash
+                )
+            )
         );
+        // make sure x < BLS_MODULUS
+        _xBytes[0] = 0x0;
+
+        // Create input for verification
+        bytes memory _input = abi.encode(
+            committedBatchStores[_batchIndex].blobVersionedHash,
+            _xBytes,
+            _kzgData
+        );
+
+        bool ret;
+        bytes memory _output;
+        assembly {
+            ret := staticcall(gas(), 0x0a, _input, 0xc0, _output, 0x40)
+        }
+        require(ret, "verify 4844-proof failed");
+
+        // Verify batch
+        bytes32 _newPublicInputHash = keccak256(
+            abi.encodePacked(_publicInputHash, _xBytes, _kzgData[0:32])
+        );
+        IZkEvmVerifier(zkevm_verifier).verify(_aggrProof, _newPublicInputHash);
+
+        // Record defender win
         challenges[_batchIndex].finished = true;
     }
 
@@ -99,7 +133,7 @@ contract ShadowRollup is Ownable {
 
     /// @notice Update the address verifier contract.
     function updateVerifier(address _verifier) external onlyOwner {
-        verifier = _verifier;
+        zkevm_verifier = _verifier;
     }
 
     function batchInChallenge(uint256 batchIndex) public view returns (bool) {
