@@ -72,8 +72,6 @@ contract ZkEvmVerifierV1 is IZkEvmVerifier {
             )
         }
 
-        if (!success) {
-            revert VerificationFailed();
-        }
+        require(success, "verify zk-proof failed");
     }
 }

@@ -5,10 +5,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import {IRollup} from "./IRollup.sol";
 import {IZkEvmVerifier} from "./libs/IZkEvmVerifier.sol";
 
-/// @title Rollup
-/// @notice This contract maintains data for rollup.
+/// @title ShadowRollup
+/// @notice This contract maintains data for shadow rollup.
 contract ShadowRollup is Ownable {
+    /// @notice The address of rollup.
     address public rollup;
+    /// @notice The address of zkevmVerifier.
     address public zkevm_verifier;
 
     struct BatchStore {
@@ -18,12 +20,14 @@ contract ShadowRollup is Ownable {
         bytes32 dataHash;
         bytes32 blobVersionedHash;
     }
+
     mapping(uint256 => BatchStore) public committedBatchStores;
 
     /**
      * @notice Store Challenge Information.(batchIndex => BatchChallenge)
      */
     mapping(uint256 => BatchChallenge) public challenges;
+
     struct BatchChallenge {
         uint64 batchIndex;
         address challenger;
@@ -42,11 +46,21 @@ contract ShadowRollup is Ownable {
         uint256 challengeDeposit
     );
 
+    /***************
+     * Constructor *
+     ***************/
+
     constructor(address _rollup, address _verifier) {
         rollup = _rollup;
         zkevm_verifier = _verifier;
     }
 
+    /// @notice Commit a batch of transactions on layer 1.
+    ///
+    /// @param batchData The BatchData struct
+    /// @param version The sequencer version
+    /// @param sequencerIndex The sequencers index
+    /// @param signature The BLS signature
     function commitBatch(
         uint64 _batchIndex,
         BatchStore calldata _batchData
@@ -66,12 +80,17 @@ contract ShadowRollup is Ownable {
         emit ChallengeState(batchIndex, _msgSender(), msg.value);
     }
 
+    // proveState proves a batch by submitting a proof.
+    // _kzgData: [y(32) | commitment(48) | proof(48)]
     function proveState(
         uint64 _batchIndex,
         bytes calldata _aggrProof,
         bytes calldata _kzgData
     ) external {
+        // Check validity of proof
         require(_aggrProof.length > 0, "Invalid proof");
+
+        // Check validity of KZG data
         require(_kzgData.length == 128, "Invalid KZG data");
 
         uint64 layer2ChainId = IRollup(rollup).layer2ChainId();
