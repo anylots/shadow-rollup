@@ -13,11 +13,15 @@ module.exports = {
   solidity: {
     compilers: [
       { version: "0.8.24" }
-    ]
+    ],
+    settings: {
+      evmVersion: "cancun",
+    }
   },
   networks: {
     hardhat: {
-      chainId: 1337 // We set 1337 to make interacting with MetaMask simpler
+      chainId: 1337, // We set 1337 to make interacting with MetaMask simpler
+      loggingEnabled: true
     },
     sepolia: {
       url: `https://eth-sepolia.g.alchemy.com/v2/xxxxx`,
