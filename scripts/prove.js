@@ -65,7 +65,7 @@ async function commitBatch(shadow_rollup, customHttpProvider) {
 
 
 function loadProveData() {
-    const inputBuffer = fs.readFileSync('./prove2.json');
+    const inputBuffer = fs.readFileSync('./prove4.json');
     const inputString = inputBuffer.toString();
 
     return JSON.parse(inputString);

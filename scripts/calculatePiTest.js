@@ -1,3 +1,25 @@
+const { ethers } = require('ethers');
+const { hexlify } = require("ethers/lib/utils");
+const fs = require('fs');
+
+async function main() {
+
+    await parseProveData();
+}
+
+
+async function parseProveData() {
+    let proveData = loadProveData();
+    let pi_data = new Uint8Array(proveData.pi_data);
+
+    let pi_data_array = parse_pi_data(pi_data);
+    console.log("pi_data_array: " + pi_data_array);
+
+    let pi_hex = ethers.utils.hexlify(pi_data_array);
+    console.log("pi_hex: " + pi_hex);
+    //0xc1779e1a30fc12f316643ef1786355ff86f34a120d9427132b8c0c93551c2409
+}
+
 async function proveState(shadow_rollup, customHttpProvider) {
 
     let proveData = loadProveData();
@@ -51,3 +73,29 @@ async function proveState(shadow_rollup, customHttpProvider) {
     console.log("pi_data_hex: " + pi_data_hex);
 
 }
+
+function loadProveData() {
+    const inputBuffer = fs.readFileSync('./prove4.json');
+    const inputString = inputBuffer.toString();
+
+    return JSON.parse(inputString);
+}
+
+
+function parse_pi_data(array) {
+    const result = [];
+    for (let i = 0; i < array.length; i += 32) {
+        const group = array.slice(i + 31, i + 32);
+        result.push(group[0]);
+    }
+    console.log(result);
+    return result;
+}
+
+
+main()
+    .then(() => process.exit(0))
+    .catch((error) => {
+        console.error(error);
+        process.exit(1);
+    });
