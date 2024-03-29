@@ -1,11 +1,11 @@
 const { ethers } = require('ethers');
 const { hexlify } = require("ethers/lib/utils");
 const fs = require('fs');
-// const ShadowRollup = require("../abi/ShadowRollup.json");
-// const ZkEvmVerifierV1 = require("../abi/ZkEvmVerifierV1.json");
+const ShadowRollup = require("../abi/ShadowRollup.json");
+const ZkEvmVerifierV1 = require("../abi/ZkEvmVerifierV1.json");
 
-const ShadowRollup = require("../artifacts/contracts/ShadowRollup.sol/ShadowRollup.json");
-const ZkEvmVerifierV1 = require("../artifacts/contracts/libs/ZkEvmVerifierV1.sol/ZkEvmVerifierV1.json");
+// const ShadowRollup = require("../artifacts/contracts/ShadowRollup.sol/ShadowRollup.json");
+// const ZkEvmVerifierV1 = require("../artifacts/contracts/libs/ZkEvmVerifierV1.sol/ZkEvmVerifierV1.json");
 
 require("dotenv").config({ path: ".env" });
 
