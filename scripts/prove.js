@@ -1,11 +1,11 @@
 const { ethers } = require('ethers');
 const { hexlify } = require("ethers/lib/utils");
 const fs = require('fs');
-// const ZkEvmVerifierV1 = require("../abi/ZkEvmVerifierV1.json");
-// const ShadowRollup = require("../abi/ShadowRollup.json");
+const ZkEvmVerifierV1 = require("../abi/ZkEvmVerifierV1.json");
+const ShadowRollup = require("../abi/ShadowRollup.json");
 
-const ShadowRollup = require("../artifacts/contracts/ShadowRollup.sol/ShadowRollup.json");
-const ZkEvmVerifierV1 = require("../artifacts/contracts/libs/ZkEvmVerifierV1.sol/ZkEvmVerifierV1.json");
+// const ShadowRollup = require("../artifacts/contracts/ShadowRollup.sol/ShadowRollup.json");
+// const ZkEvmVerifierV1 = require("../artifacts/contracts/libs/ZkEvmVerifierV1.sol/ZkEvmVerifierV1.json");
 
 require("dotenv").config({ path: ".env" });
 
@@ -65,7 +65,7 @@ async function commitBatch(shadow_rollup, customHttpProvider) {
 
 
 function loadProveData() {
-    const inputBuffer = fs.readFileSync('./prove4.json');
+    const inputBuffer = fs.readFileSync('./prove.json');
     const inputString = inputBuffer.toString();
 
     return JSON.parse(inputString);

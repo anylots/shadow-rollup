@@ -75,7 +75,7 @@ async function proveState(shadow_rollup, customHttpProvider) {
 }
 
 function loadProveData() {
-    const inputBuffer = fs.readFileSync('./prove4.json');
+    const inputBuffer = fs.readFileSync('./prove.json');
     const inputString = inputBuffer.toString();
 
     return JSON.parse(inputString);

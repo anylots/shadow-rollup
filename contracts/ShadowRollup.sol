@@ -152,12 +152,12 @@ contract ShadowRollup is Ownable {
         bytes memory _xBytes,
         bytes memory _yBytes
     ) private view returns (bytes32) {
-        uint64 layer2ChainId = IRollup(rollup).layer2ChainId();
+        // uint64 layer2ChainId = IRollup(rollup).layer2ChainId();
 
         return
             keccak256(
                 abi.encodePacked(
-                    layer2ChainId,
+                    uint64(53077),
                     committedBatchStores[_batchIndex].prevStateRoot,
                     committedBatchStores[_batchIndex].postStateRoot,
                     committedBatchStores[_batchIndex].withdrawalRoot,
